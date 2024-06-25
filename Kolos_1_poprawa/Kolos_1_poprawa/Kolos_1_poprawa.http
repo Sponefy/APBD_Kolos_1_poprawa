@@ -1,0 +1,6 @@
+@Kolos_1_poprawa_HostAddress = http://localhost:5074
+
+GET {{Kolos_1_poprawa_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
