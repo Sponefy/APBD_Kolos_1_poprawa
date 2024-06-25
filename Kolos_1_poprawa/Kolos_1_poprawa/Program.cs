@@ -9,7 +9,7 @@ builder.Services.AddSwaggerGen();
 
 
 builder.Services.AddControllers();
-builder.Services.AddScoped<IKolosService, KolosService>();
+builder.Services.AddScoped<IClientService, ClientService>();
 
 var app = builder.Build();
 
