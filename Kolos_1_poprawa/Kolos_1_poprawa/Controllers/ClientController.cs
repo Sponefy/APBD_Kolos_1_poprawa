@@ -31,9 +31,9 @@ public class ClientController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> AddClient(AddRentalDto rentalDto)
     {
-        var result = _service.AddClient(rentalDto);
+        var result = await _service.AddClient(rentalDto);
 
-        if (result == null)
+        if (result == 0)
         {
             return BadRequest("Auto o takim Id nie istnieje");
         }

@@ -91,6 +91,32 @@ public class ClientService : IClientService
 
     public async Task<int> AddClient(AddRentalDto rentalDto)
     {
+        await using SqlConnection connection = new SqlConnection(_configuration.GetConnectionString("Default"));
+        await connection.OpenAsync();
+        
+        var queryGetCar = @"
+                Select PricePerDay
+                From cars
+                Where cars.ID = @ID";
+        
+        await using SqlCommand command = new SqlCommand();
+
+        command.Connection = connection;
+        command.CommandText = queryGetCar;
+        command.Parameters.AddWithValue("@ID", rentalDto.CarID);
+
+        await connection.OpenAsync();
+
+        var reader = await command.ExecuteReaderAsync();
+        await reader.ReadAsync();
+
+        int pricePerDay = 0;
+        pricePerDay = reader.GetInt32(reader.GetOrdinal("TotalPrice"));
+
+        if (pricePerDay == 0)
+        {
+            return 0;
+        }
         
         var queryAddClient = @"
                 Insert into clients (FirstName, LastName, Address)
@@ -98,11 +124,8 @@ public class ClientService : IClientService
                 Values (@FN, @LN, @AD)";
 
         var queryAddRental = @"
-                Insert into car_rentals (ClientId, CarID, DateFrom, DateTo, TotalPrice, Discount)
+                Insert into car_rentals (ClientID, CarID, DateFrom, DateTo, TotalPrice, Discount)
                 VALUES (@CLID, @CID, @DF, @DT, @TP, null)";
-        
-        await using SqlConnection connection = new SqlConnection(_configuration.GetConnectionString("Default"));
-        await connection.OpenAsync();
         
         await using SqlCommand commandAddClient = new SqlCommand(queryAddClient, connection);
         commandAddClient.Parameters.AddWithValue("@FN", rentalDto.Client.FirstName);
@@ -112,7 +135,7 @@ public class ClientService : IClientService
         var clientID = (int) await commandAddClient.ExecuteScalarAsync();
 
 
-        var totalPrice = (rentalDto.DateFrom - rentalDto.DateTo).Days * 100;
+        var totalPrice = (rentalDto.DateFrom - rentalDto.DateTo).Days * pricePerDay;
 
 
         await using SqlCommand commandAddRental = new SqlCommand(queryAddRental, connection);
@@ -123,7 +146,7 @@ public class ClientService : IClientService
         commandAddRental.Parameters.AddWithValue("@TP", totalPrice);
 
 
-        await commandAddRental.ExecuteReaderAsync();
+        await commandAddRental.ExecuteNonQueryAsync();
 
         return 1;
     }
